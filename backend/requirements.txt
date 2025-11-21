@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+supabase
+svix
+pydantic
+python-multipart
+PyJWT
