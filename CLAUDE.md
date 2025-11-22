@@ -14,15 +14,15 @@ TEAMFIT MVP is an AI-powered team-building platform for remote teams. The tech s
 
 ### Backend Server
 
-Start the FastAPI development server:
+Start the FastAPI development server (using UV):
 ```bash
 cd backend
-python -m uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8000
 ```
 
 For production:
 ```bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ### Frontend Development Server
@@ -37,7 +37,13 @@ Frontend available at: http://localhost:5173
 
 ### Install Dependencies
 
-**Backend:**
+**Backend (using UV - recommended):**
+```bash
+cd backend
+uv sync
+```
+
+**Backend (legacy pip):**
 ```bash
 cd backend
 pip install --break-system-packages -r requirements.txt
@@ -49,13 +55,15 @@ cd frontend
 npm install
 ```
 
+**Note:** UV is the recommended package manager for Python. It's significantly faster than pip and provides better dependency resolution. The project now uses `pyproject.toml` for dependency management.
+
 ### Running Full Stack
 
 **Terminal setup for local development:**
 ```bash
-# Terminal 1: Backend
+# Terminal 1: Backend (using UV)
 cd backend
-python -m uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8000
 
 # Terminal 2: Frontend
 cd frontend
@@ -114,6 +122,56 @@ SELECT id, clerk_user_id, email, full_name, created_at
 FROM public.users
 WHERE created_at > NOW() - INTERVAL '1 hour';
 ```
+
+## UV Package Manager
+
+This project uses **UV** (https://github.com/astral-sh/uv) for Python package management. UV is an extremely fast Python package installer and resolver written in Rust.
+
+### Why UV?
+
+- **Speed:** 10-100x faster than pip
+- **Better dependency resolution:** Resolves complex dependency trees correctly
+- **Virtual environment management:** Automatically manages `.venv`
+- **Modern tooling:** Uses `pyproject.toml` standard
+
+### Common UV Commands
+
+```bash
+# Install UV globally (one-time setup)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Sync dependencies (creates .venv and installs packages)
+cd backend
+uv sync
+
+# Add a new dependency
+uv add package-name
+
+# Add a development dependency
+uv add --dev pytest
+
+# Remove a dependency
+uv remove package-name
+
+# Run a command in the virtual environment
+uv run uvicorn app.main:app --reload
+
+# Update all dependencies
+uv lock --upgrade
+
+# Show installed packages
+uv pip list
+```
+
+### Project Files
+
+- **pyproject.toml** - Main dependency configuration (replaces requirements.txt)
+- **uv.lock** - Lockfile with exact versions (auto-generated, commit to git)
+- **.venv/** - Virtual environment (auto-created, in .gitignore)
+
+### Migration Notes
+
+The project maintains **both** `requirements.txt` (legacy) and `pyproject.toml` (UV) for compatibility. New dependencies should be added to `pyproject.toml` using `uv add package-name`.
 
 ## Architecture Overview
 
@@ -298,9 +356,9 @@ value = field[0].get("value") if field else None
 
 **Local Testing with ngrok:**
 ```bash
-# Terminal 1: Start backend
+# Terminal 1: Start backend (using UV)
 cd backend
-python -m uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8000
 
 # Terminal 2: Start ngrok (IMPORTANT: Use port 8000, NOT 80!)
 ngrok http 8000

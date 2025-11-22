@@ -1,0 +1,15 @@
+[project]
+name = "teamfit-backend"
+version = "0.1.0"
+description = "TEAMFIT MVP - AI-powered team-building platform backend"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "python-dotenv",
+    "supabase",
+    "svix",
+    "pydantic",
+    "python-multipart",
+    "PyJWT",
+]
