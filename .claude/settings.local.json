@@ -10,7 +10,18 @@
       "Bash(pip install:*)",
       "Bash(timeout /t 3)",
       "Bash(nul)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git log:*)",
+      "Bash(uv run python:*)",
+      "Bash(uv:*)",
+      "Bash(uvx:*)",
+      "Bash(where:*)",
+      "Bash(\"/c/Users/HP/.local/bin/uvx.exe\" --from git+https://github.com/github/spec-kit.git specify init --here)",
+      "Bash(chcp:*)",
+      "Bash(PYTHONIOENCODING=utf-8 \"/c/Users/HP/.local/bin/uvx.exe\":*)",
+      "Bash(echo:*)",
+      "Bash(PYTHONIOENCODING=utf-8 uvx:*)",
+      "Bash(git add:*)"
     ]
   },
   "enabledMcpjsonServers": [
