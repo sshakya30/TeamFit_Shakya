@@ -1,10 +1,11 @@
 /**
  * Supabase client configuration for TEAMFIT
- * Integrates with Clerk authentication
+ * Integrates with Clerk authentication + TypeScript types
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { useSession } from '@clerk/clerk-react';
+import type { Database } from '@/types/database.types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -19,13 +20,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
  */
 export function useSupabaseClient() {
   const { session } = useSession();
+  const token = session?.lastActiveToken?.getRawString();
 
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: {
-      headers: async () => {
-        const token = await session?.getToken();
-        return token ? { Authorization: `Bearer ${token}` } : {};
-      },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     },
   });
 }
@@ -34,4 +33,4 @@ export function useSupabaseClient() {
  * Base Supabase client (without auth)
  * Use only for public data queries
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

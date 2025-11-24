@@ -21,7 +21,11 @@
       "Bash(PYTHONIOENCODING=utf-8 \"/c/Users/HP/.local/bin/uvx.exe\":*)",
       "Bash(echo:*)",
       "Bash(PYTHONIOENCODING=utf-8 uvx:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)"
     ]
   },
   "enabledMcpjsonServers": [
