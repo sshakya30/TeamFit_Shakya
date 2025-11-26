@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import webhooks  # Import webhook router
+from .routers import webhooks, materials, activities, jobs  # Import routers
 import os
 from dotenv import load_dotenv
 
@@ -33,9 +33,24 @@ app.include_router(
     tags=["webhooks"]
 )
 
-# Your other routers will go here
-# app.include_router(teams.router, prefix="/api/teams", tags=["teams"])
-# app.include_router(activities.router, prefix="/api/activities", tags=["activities"])
+# Register AI feature routers
+app.include_router(
+    materials.router,
+    prefix="/api/materials",
+    tags=["materials"]
+)
+
+app.include_router(
+    activities.router,
+    prefix="/api/activities",
+    tags=["activities"]
+)
+
+app.include_router(
+    jobs.router,
+    prefix="/api/jobs",
+    tags=["jobs"]
+)
 
 
 @app.get("/")

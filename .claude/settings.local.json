@@ -25,7 +25,13 @@
       "Bash(find:*)",
       "Bash(cat:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(PYTHONIOENCODING=utf-8 uv run:*)",
+      "Bash(PYTHONIOENCODING=utf-8 cd:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(timeout 3 bash -c 'while ! curl -s http://localhost:8000/health > /dev/null 2>&1; do sleep 0.5; done; echo \"\"Server is ready\"\"')",
+      "Bash(timeout 5 bash -c 'while ! curl -s http://localhost:8000/health > /dev/null 2>&1; do sleep 0.5; done; echo \"\"Server is ready\"\"')",
+      "Bash(python:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -25,6 +25,21 @@ For production:
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
+### Celery Worker (Required for AI Features)
+
+Start Celery worker for async task processing:
+```bash
+cd backend
+uv run celery -A celery_worker worker --loglevel=info
+```
+
+### Redis (Required for Celery)
+
+Start Redis server (message broker for Celery):
+```bash
+redis-server
+```
+
 ### Frontend Development Server
 
 Start the React + Vite development server:
@@ -43,34 +58,31 @@ cd backend
 uv sync
 ```
 
-**Backend (legacy pip):**
-```bash
-cd backend
-pip install --break-system-packages -r requirements.txt
-```
-
 **Frontend:**
 ```bash
 cd frontend
 npm install
 ```
 
-**Note:** UV is the recommended package manager for Python. It's significantly faster than pip and provides better dependency resolution. The project now uses `pyproject.toml` for dependency management.
+**Note:** UV is the recommended package manager for Python. It's significantly faster than pip and provides better dependency resolution.
 
-### Running Full Stack
+### Running Full Stack (4 Terminals)
 
-**Terminal setup for local development:**
 ```bash
-# Terminal 1: Backend (using UV)
+# Terminal 1: Redis (message broker)
+redis-server
+
+# Terminal 2: Celery Worker (async tasks)
+cd backend
+uv run celery -A celery_worker worker --loglevel=info
+
+# Terminal 3: FastAPI Backend
 cd backend
 uv run uvicorn app.main:app --reload --port 8000
 
-# Terminal 2: Frontend
+# Terminal 4: Frontend
 cd frontend
 npm run dev
-
-# Terminal 3: ngrok (for webhook testing only)
-ngrok http 8000
 ```
 
 ### Testing Commands
@@ -178,16 +190,34 @@ The project maintains **both** `requirements.txt` (legacy) and `pyproject.toml` 
 ### Backend Structure
 
 ```
-backend/app/
-├── main.py              # FastAPI app, CORS, router registration
-├── routers/
-│   └── webhooks.py      # Clerk webhook endpoints (user.created/updated/deleted)
-└── utils/
-    ├── supabase_client.py   # Service role & user-authenticated clients
-    └── user_sync.py         # User CRUD from Clerk webhook events
+backend/
+├── celery_worker.py         # Celery worker entry point
+└── app/
+    ├── main.py              # FastAPI app, CORS, router registration
+    ├── config.py            # Pydantic settings (env vars)
+    ├── routers/
+    │   ├── webhooks.py      # Clerk webhook endpoints
+    │   ├── activities.py    # AI activity customization/generation
+    │   ├── materials.py     # File upload and management
+    │   └── jobs.py          # Async job status polling
+    ├── services/
+    │   ├── ai_service.py    # OpenAI integration
+    │   ├── file_service.py  # File validation and text extraction
+    │   ├── quota_service.py # Usage quota enforcement
+    │   └── trust_service.py # Organization trust scoring
+    ├── tasks/
+    │   └── generation_tasks.py  # Celery async tasks
+    └── utils/
+        ├── supabase_client.py   # Service role & user clients
+        ├── user_sync.py         # User CRUD from webhooks
+        └── prompts.py           # AI prompt templates
 ```
 
-**Key Pattern:** Separation between service role client (webhooks, bypasses RLS) and user client (frontend queries, respects RLS).
+**Key Patterns:**
+- Service role client (bypasses RLS) vs user client (respects RLS)
+- Celery + Redis for async AI generation tasks
+- Trust scoring for abuse prevention
+- Quota enforcement (free: 5/month, paid: 10 custom generations)
 
 **CORS Configuration:** `allow_origins=["*"]` to permit Clerk webhooks (which originate from Clerk servers, not frontend). Security is handled via Svix signature verification.
 
@@ -215,19 +245,29 @@ frontend/src/
 
 ### Database Architecture (Supabase)
 
-**11 Tables with Role-Based Access:**
+**Core Tables:**
 - `users` - Synced from Clerk (clerk_user_id is external identifier)
 - `organizations` - Multi-tenant isolation point
 - `teams` - Belongs to organizations
 - `team_members` - Junction table with role enum (member/manager/admin)
-- `activities`, `public_activities` - Custom vs system-managed activities
+- `subscriptions` - Stripe-ready billing
+
+**AI Feature Tables:**
+- `public_activities` - System-managed activity library (45 activities)
+- `customized_activities` - Team-specific customizations with enums:
+  - `customization_type`: `public_customized` | `custom_generated`
+  - `status`: `suggested` | `saved` | `scheduled` | `expired`
+- `team_profiles` - Team context for AI personalization
+- `uploaded_materials` - Files for custom generation (PDF, DOCX, PPTX, XLSX)
+- `customization_jobs` - Async job tracking for Celery tasks
+- `usage_quotas` - Trust scores and usage limits per organization
+
+**Event Tables:**
 - `scheduled_events` - Team events with activity references
 - `feedback` - Immutable event feedback (1-5 ratings)
-- `activity_recommendations` - AI suggestions with confidence scores
-- `subscriptions` - Stripe-ready billing
 - `analytics_events` - Immutable event logs
 
-**46 RLS Policies** enforce role-based access at the database level. All policies use helper functions like `current_user_id()` which extracts clerk_user_id from JWT.
+**RLS Policies** enforce role-based access using `current_user_id()` which extracts clerk_user_id from JWT.
 
 **Critical Design Decision:** Users are NOT stored in Supabase Auth. Clerk handles authentication, webhooks sync to `users` table, and RLS policies use JWT claims (`auth.jwt() ->> 'sub'`) to map to clerk_user_id.
 
@@ -381,12 +421,34 @@ ngrok http 8000
 
 **Required in `backend/.env`:**
 ```env
+# Clerk
 CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 CLERK_WEBHOOK_SECRET=whsec_...
+
+# Supabase
 SUPABASE_URL=https://....supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# OpenAI
+OPENAI_API_KEY=sk-proj-...
+FREE_TIER_AI_MODEL=gpt-4o-mini
+PAID_TIER_AI_MODEL=gpt-4o
+
+# Redis/Celery
+REDIS_URL=redis://localhost:6379/0
+
+# Storage
+STORAGE_BUCKET_NAME=team-materials
+MAX_FILE_SIZE_MB=10
+MAX_TEAM_STORAGE_MB=50
+
+# Quotas
+FREE_TIER_MONTHLY_LIMIT=5
+PAID_TIER_CUSTOM_LIMIT=10
+
+# Application
 SUPER_ADMIN_EMAIL=shakyasupernicecrunch@gmail.com
 FRONTEND_URL=http://localhost:5173
 ```
@@ -399,7 +461,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 VITE_API_URL=http://localhost:8000
 ```
 
-All keys are pre-configured. **Never commit `.env` or `.env.local` to git** (already in `.gitignore`).
+**Never commit `.env` or `.env.local` to git** (already in `.gitignore`).
 
 ## TypeScript Types
 
@@ -422,39 +484,66 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 
 ## Project Status
 
-**Completed:**
-- ✅ Database schema with RLS (11 tables, 46 policies)
-- ✅ FastAPI backend structure
-- ✅ Clerk webhook integration
+**Phase 1 - Foundation (Completed):**
+- ✅ Database schema with RLS policies
+- ✅ FastAPI backend with Clerk webhooks
 - ✅ User synchronization from Clerk
-- ✅ TypeScript type generation
-- ✅ Service role vs user client separation
 - ✅ Frontend (React + Vite + TypeScript)
-- ✅ Clerk authentication UI (sign-in/sign-up)
-- ✅ Dashboard with team info and welcome states
-- ✅ User profile page
-- ✅ Direct Supabase queries with RLS
+- ✅ Clerk authentication UI
+- ✅ Dashboard with team info
 - ✅ shadcn/ui component library
-- ✅ Test infrastructure (Vitest)
+
+**Phase 2 - AI Features (Completed):**
+- ✅ OpenAI integration (gpt-4o-mini / gpt-4o)
+- ✅ Public activity customization (real-time)
+- ✅ Custom activity generation (async via Celery)
+- ✅ File upload with text extraction (PDF, DOCX, PPTX, XLSX)
+- ✅ Quota management (free tier limits)
+- ✅ Trust scoring for abuse prevention
+- ✅ Celery + Redis async processing
+- ✅ Team profile management
+- ✅ Supabase Storage integration
 
 **Not Yet Implemented:**
-- ⏭️ Additional API endpoints (teams, activities, events, feedback)
-- ⏭️ Backend test suite (pytest)
-- ⏭️ Deployment configuration (Docker, CI/CD)
-- ⏭️ Activity recommendation engine
-- ⏭️ Analytics dashboard
-- ⏭️ Team management CRUD UI
+- ⏭️ Frontend UI for AI features
 - ⏭️ Event scheduling UI
 - ⏭️ Feedback submission UI
+- ⏭️ Analytics dashboard
+- ⏭️ Deployment configuration (Docker, CI/CD)
+- ⏭️ Backend test suite (pytest)
+
+## AI Features API Endpoints
+
+**Materials (paid subscription only):**
+- `POST /api/materials/upload` - Upload file (PDF, DOCX, PPTX, XLSX)
+- `GET /api/materials/{team_id}` - List team materials
+- `DELETE /api/materials/{material_id}` - Delete material
+
+**Activities:**
+- `POST /api/activities/customize` - Customize public activity (real-time)
+- `POST /api/activities/generate-custom` - Generate 3 custom activities (async via Celery)
+- `POST /api/activities/team-profile` - Create/update team profile
+- `GET /api/activities/team/{team_id}` - List customized activities
+- `PATCH /api/activities/{activity_id}/status` - Update activity status
+
+**Jobs (for async task polling):**
+- `GET /api/jobs/{job_id}` - Get job status and results
+- `GET /api/jobs/team/{team_id}` - List team jobs
+
+**Async Flow:**
+1. `POST /api/activities/generate-custom` → Returns `job_id`
+2. Celery worker processes task in background
+3. Frontend polls `GET /api/jobs/{job_id}` until `status: "completed"`
+4. Response includes generated activities
 
 ## Key Documentation Files
 
+- `CELERY_REDIS_SETUP.md` - Celery + Redis setup and usage guide
+- `PHASE_2_IMPLEMENTATION_COMPLETE.md` - AI features implementation (Part 1)
+- `PHASE_2_PART2_IMPLEMENTATION_COMPLETE.md` - Trust scoring and table alignment
 - `DATABASE_IMPLEMENTATION_SUMMARY.md` - Complete database schema details
-- `CLERK_SUPABASE_INTEGRATION_COMPLETE.md` - Backend implementation guide
-- `WEBHOOK_FIX_DOCUMENTATION.md` - Clerk webhook empty email array fix
 - `WEBHOOK_TROUBLESHOOTING_GUIDE.md` - Ngrok and webhook debugging guide
 - `frontend/README.md` - Frontend setup and architecture details
-- `PROMPT_*.md` - Implementation specifications for each phase
 
 ## Security Notes
 
