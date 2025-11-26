@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -226,11 +226,12 @@ backend/
 ```
 frontend/src/
 ├── components/
-│   ├── ui/              # shadcn/ui components (Button, Card)
+│   ├── ui/              # shadcn/ui components (Button, Card, Dialog, Select, Badge, Skeleton)
 │   ├── layout/          # Navbar, Layout, ProtectedRoute
-│   └── dashboard/       # WelcomeCard, TeamInfoCard
-├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile
-├── hooks/               # useUser (TanStack Query for user data)
+│   ├── dashboard/       # WelcomeCard, TeamInfoCard
+│   └── activities/      # ActivityCard, ActivityGrid, ActivityFilters, ActivityDetailModal, EmptyState
+├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary
+├── hooks/               # useUser, useActivities (TanStack Query hooks)
 ├── lib/                 # Supabase client (with Clerk JWT), utils
 ├── types/               # TypeScript interfaces matching database schema
 ├── App.tsx              # Routing (React Router), providers (Clerk, TanStack Query)
@@ -504,11 +505,16 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 - ✅ Team profile management
 - ✅ Supabase Storage integration
 
-**Not Yet Implemented:**
-- ⏭️ Frontend UI for AI features
+**Phase 3 - Frontend UI (In Progress):**
+- ✅ Activity Library page with filtering (category, duration, complexity)
+- ✅ Activity cards with detail modal
+- ✅ Customization placeholder page (/customize/:activityId)
+- ⏭️ Activity customization UI (LLM integration)
 - ⏭️ Event scheduling UI
 - ⏭️ Feedback submission UI
 - ⏭️ Analytics dashboard
+
+**Not Yet Implemented:**
 - ⏭️ Deployment configuration (Docker, CI/CD)
 - ⏭️ Backend test suite (pytest)
 
@@ -545,6 +551,28 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 - `WEBHOOK_TROUBLESHOOTING_GUIDE.md` - Ngrok and webhook debugging guide
 - `frontend/README.md` - Frontend setup and architecture details
 
+## Constitution Principles (Mandatory)
+
+This project follows the TEAMFIT Constitution (`.specify/memory/constitution.md`). All development must comply with:
+
+| Principle | Key Requirements |
+|-----------|-----------------|
+| I. Event-Driven Architecture | Use Celery + Redis for async/long-running operations |
+| II. Product Robustness | Error handling with retry logic, circuit breakers, fallbacks |
+| III. Security Implementation | Clerk auth, Supabase RLS, Svix webhook verification |
+| IV. Separation of Concerns | Routers→Services→Utils (backend), Components→Hooks→Pages (frontend) |
+| V. Logging System | Structured logging, no PII in logs |
+| VI. Input Validation | Pydantic models, type checking, file validation |
+| VII. Code Simplicity | Max ~50 lines/function, cyclomatic complexity ≤10 |
+| VIII. Code Documentation | Docstrings, type hints, inline comments for complex logic |
+
+**User Permission Required Before:**
+- Database migrations with data changes
+- Dependency version upgrades
+- Architectural changes
+- File/data deletion
+- Push to remote repositories
+
 ## Security Notes
 
 1. **Service role key** only in backend, never frontend
@@ -571,3 +599,27 @@ Supabase MCP server is configured for direct database operations:
 - `mcp__supabase__generate_typescript_types` - Regenerate types
 
 MCP endpoint: `https://mcp.supabase.com/mcp?project_ref=rbwnbfodovzwqajuiyxl`
+
+## Feature Development Workflow (Speckit)
+
+Features are developed using the speckit workflow. Specs are stored in `specs/[###-feature-name]/`:
+
+```bash
+/speckit.specify   # Create feature specification (spec.md)
+/speckit.clarify   # Resolve ambiguities via Q&A
+/speckit.plan      # Create implementation plan (plan.md, research.md, data-model.md)
+/speckit.tasks     # Generate task checklist (tasks.md)
+/speckit.analyze   # Cross-artifact consistency check
+/speckit.implement # Execute implementation
+```
+
+**Feature spec structure:**
+```
+specs/001-activity-library/
+├── spec.md          # Requirements, user stories, acceptance criteria
+├── plan.md          # Technical context, architecture decisions
+├── tasks.md         # Actionable task checklist with [X] progress
+├── research.md      # Technical decisions and alternatives
+├── data-model.md    # TypeScript interfaces and data flow
+└── quickstart.md    # Implementation steps and verification
+```

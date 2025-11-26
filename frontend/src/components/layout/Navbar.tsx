@@ -33,6 +33,9 @@ export function Navbar() {
             <Link to="/dashboard">
               <Button variant="ghost">Dashboard</Button>
             </Link>
+            <Link to="/activities">
+              <Button variant="ghost">Activities</Button>
+            </Link>
             <Link to="/profile">
               <Button variant="ghost">Profile</Button>
             </Link>

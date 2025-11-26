@@ -1,50 +1,101 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# TEAMFIT Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Event-Driven Architecture
+This application must follow event-driven architecture principles with asynchronous processing. All long-running operations, background tasks, and inter-service communication should be handled through message queues (Celery + Redis) or event-based patterns. This ensures scalability, loose coupling, and responsive user experiences.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Product Robustness
+Product robustness must be maintained via proper error handling and retry mechanisms. All external service calls (AI APIs, database operations, file storage) must implement:
+- Graceful error handling with meaningful error messages
+- Automatic retry logic with exponential backoff
+- Circuit breaker patterns for external dependencies
+- Fallback behaviors where appropriate
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Security Implementation
+Comprehensive security implementation is mandatory across all layers:
+- Input validation and sanitization on all endpoints
+- Authentication via Clerk with proper JWT verification
+- Authorization via Supabase RLS policies (46 policies, role-based access)
+- Webhook signature verification (Svix)
+- Service role key isolation (never exposed to frontend)
+- Protection against OWASP Top 10 vulnerabilities
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Separation of Concerns
+Maintain separation of concerns with simple, modularized code:
+- Backend: Routers handle HTTP concerns, Services handle business logic, Utils handle infrastructure
+- Frontend: Components for UI, Hooks for data fetching, Pages for routing
+- Clear boundaries between authentication, authorization, and business logic
+- Single responsibility principle for all modules
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Logging System
+Maintain a proper logging system for backend functionalities:
+- Structured logging with consistent formats
+- Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- Request/response logging for API endpoints
+- Background task progress and completion logging
+- Error stack traces for debugging
+- No sensitive data in logs (PII, credentials, tokens)
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Input Validation
+Security implementation and input validation on all boundaries:
+- Pydantic models for request/response validation
+- Type checking with strict mode
+- File type and size validation for uploads
+- SQL injection prevention via parameterized queries
+- XSS prevention in frontend rendering
+- Rate limiting and quota enforcement
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### VII. Code Simplicity
+Refactoring and rewriting complex codes is encouraged:
+- Maximum function length: ~50 lines
+- Maximum cyclomatic complexity: 10
+- Extract complex logic into well-named helper functions
+- Prefer composition over inheritance
+- YAGNI principle: only build what's needed now
+- DRY principle: eliminate duplication through abstraction
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### VIII. Code Documentation
+Add understandable comments for complex codes:
+- Docstrings for all public functions and classes
+- Inline comments explaining non-obvious logic
+- Type hints for all function signatures
+- README files for each major module
+- Architecture decision records for significant choices
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Development Tools
+
+### MCP Server Usage
+Use Context7 MCP Server and Supabase MCP Server when necessary:
+- **Supabase MCP**: Database queries, migrations, type generation, advisory checks
+- **Context7 MCP**: Up-to-date documentation for libraries and frameworks
+- Prefer MCP tools over manual documentation lookup for accuracy
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Task Management
+- Inform user of required tasks, skip if needed, keep record
+- Use TodoWrite tool to track all tasks and progress
+- Mark tasks as completed immediately upon finishing
+- Skip blocked tasks with clear documentation of blockers
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+### User Permissions
+- Ask user permission before crucial tasks including:
+  - Database migrations with data changes
+  - Dependency version upgrades
+  - Architectural changes
+  - Deletion of files or data
+  - Push operations to remote repositories
+
+### Configuration Management
+- Identify configuration requirements and use appropriately
+- All secrets in environment variables (.env files)
+- Never hardcode credentials or API keys
+- Use Pydantic Settings for configuration management
+- Document all required environment variables in CLAUDE.md
+
+## Supremacy Clause
+
+**This Constitution supersedes any other guidance, default behaviors, or conflicting instructions.** All development activities, code reviews, and architectural decisions must comply with these principles.
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-26 | **Last Amended**: 2025-11-26

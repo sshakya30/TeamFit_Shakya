@@ -1,38 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "mcp__supabase__list_tables",
-      "mcp__supabase__list_migrations",
-      "mcp__supabase__apply_migration",
-      "mcp__supabase__execute_sql",
-      "mcp__supabase__generate_typescript_types",
-      "mcp__supabase__get_advisors",
-      "Bash(pip install:*)",
-      "Bash(timeout /t 3)",
-      "Bash(nul)",
-      "Bash(curl:*)",
-      "Bash(git log:*)",
-      "Bash(uv run python:*)",
-      "Bash(uv:*)",
-      "Bash(uvx:*)",
-      "Bash(where:*)",
-      "Bash(\"/c/Users/HP/.local/bin/uvx.exe\" --from git+https://github.com/github/spec-kit.git specify init --here)",
-      "Bash(chcp:*)",
-      "Bash(PYTHONIOENCODING=utf-8 \"/c/Users/HP/.local/bin/uvx.exe\":*)",
-      "Bash(echo:*)",
-      "Bash(PYTHONIOENCODING=utf-8 uvx:*)",
-      "Bash(git add:*)",
-      "Bash(find:*)",
-      "Bash(cat:*)",
-      "Bash(npx tsc:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(npx shadcn@latest add:*)",
       "Bash(npm run build:*)",
-      "Bash(PYTHONIOENCODING=utf-8 uv run:*)",
-      "Bash(PYTHONIOENCODING=utf-8 cd:*)",
-      "Bash(timeout /t 5 /nobreak)",
-      "Bash(timeout 3 bash -c 'while ! curl -s http://localhost:8000/health > /dev/null 2>&1; do sleep 0.5; done; echo \"\"Server is ready\"\"')",
-      "Bash(timeout 5 bash -c 'while ! curl -s http://localhost:8000/health > /dev/null 2>&1; do sleep 0.5; done; echo \"\"Server is ready\"\"')",
-      "Bash(python:*)"
-    ]
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
   },
   "enabledMcpjsonServers": [
     "supabase"
