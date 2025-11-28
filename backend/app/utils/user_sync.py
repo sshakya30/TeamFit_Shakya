@@ -75,16 +75,49 @@ def create_user_in_supabase(clerk_user_data: Dict[str, Any]) -> Dict[str, Any]:
             raise Exception("User creation returned no data")
         
         print(f"✅ User created successfully: {email}")
-        
-        # Check if this is the super admin email
-        if email == SUPER_ADMIN_EMAIL:
-            print(f"🔐 Super admin detected: {email} - Auto-assigning admin role")
-            # Note: Admin role assignment happens when user joins an organization
-            # This is just a marker for later. You'll manually create the first
-            # organization and team_member record with role='admin'
-        
+
+        # Check for pending invitations for this email
+        pending_invitations = supabase.table("pending_invitations").select("*").eq("email", email.lower()).eq("status", "pending").execute()
+
+        if pending_invitations.data:
+            print(f"📨 Found {len(pending_invitations.data)} pending invitation(s) for {email}")
+
+            for invitation in pending_invitations.data:
+                try:
+                    # Create team_member record for this invitation
+                    member_data = {
+                        "user_id": user["id"],
+                        "team_id": invitation["team_id"],
+                        "organization_id": invitation["organization_id"],
+                        "role": invitation["role"]
+                    }
+
+                    supabase.table("team_members").insert(member_data).execute()
+                    print(f"✅ Added user to team {invitation['team_id']} as {invitation['role']}")
+
+                    # Mark invitation as accepted
+                    supabase.table("pending_invitations").update({
+                        "status": "accepted",
+                        "accepted_at": "now()"
+                    }).eq("id", invitation["id"]).execute()
+
+                except Exception as invite_error:
+                    print(f"⚠️ Error processing invitation {invitation['id']}: {invite_error}")
+
+            # Mark onboarding as complete for invited users (they don't need to go through onboarding)
+            supabase.table("users").update({
+                "onboarding_completed": True,
+                "onboarding_step": "complete"
+            }).eq("id", user["id"]).execute()
+
+            print(f"✅ User {email} auto-linked to {len(pending_invitations.data)} team(s) via invitations")
+
+        # Check if this is the super admin email (only if no invitations found)
+        elif email == SUPER_ADMIN_EMAIL:
+            print(f"🔐 Super admin detected: {email} - Will go through onboarding flow")
+
         return user
-        
+
     except Exception as e:
         print(f"❌ Error creating user: {e}")
         raise

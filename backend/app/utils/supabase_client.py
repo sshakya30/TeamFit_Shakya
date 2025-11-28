@@ -3,7 +3,7 @@ Supabase client utilities for TEAMFIT MVP
 Provides both service role client (bypasses RLS) and user-authenticated client
 """
 
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
 from typing import Optional
 import os
 from dotenv import load_dotenv
@@ -56,11 +56,11 @@ def get_supabase_user_client(clerk_jwt: str) -> Client:
     return create_client(
         supabase_url=SUPABASE_URL,
         supabase_key=SUPABASE_ANON_KEY,
-        options={
-            "headers": {
+        options=ClientOptions(
+            headers={
                 "Authorization": f"Bearer {clerk_jwt}"
             }
-        }
+        )
     )
 
 

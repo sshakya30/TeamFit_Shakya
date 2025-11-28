@@ -6,7 +6,12 @@
       "Bash(npm run build:*)",
       "Bash(dir:*)",
       "Bash(findstr:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git fetch:*)",
+      "Bash(powershell:*)",
+      "Bash(del \"c:\\Cursor Projects\\Team_Shakya\\frontend\\src\\pages\\CustomizePlaceholder.tsx\")",
+      "Bash(npm install:*)",
+      "Bash(python -c:*)"
     ],
     "deny": [],
     "ask": []

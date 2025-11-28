@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import webhooks, materials, activities, jobs  # Import routers
+from .routers import webhooks, materials, activities, jobs, onboarding, management  # Import routers
 import os
 from dotenv import load_dotenv
 
@@ -50,6 +50,20 @@ app.include_router(
     jobs.router,
     prefix="/api/jobs",
     tags=["jobs"]
+)
+
+# Register onboarding router
+app.include_router(
+    onboarding.router,
+    prefix="/api/onboarding",
+    tags=["onboarding"]
+)
+
+# Register management router (post-onboarding team/org management)
+app.include_router(
+    management.router,
+    prefix="/api/manage",
+    tags=["management"]
 )
 
 

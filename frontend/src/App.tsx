@@ -12,7 +12,10 @@ import { SignUp } from './pages/SignUp';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
 import { ActivityLibrary } from './pages/ActivityLibrary';
-import { CustomizePlaceholder } from './pages/CustomizePlaceholder';
+import { CustomizeActivity } from './pages/CustomizeActivity';
+import { Onboarding } from './pages/Onboarding';
+import { TeamManagement } from './pages/TeamManagement';
+import { OnboardingRoute } from './components/layout/OnboardingRoute';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -41,11 +44,65 @@ function App() {
             <Route path="/sign-in/*" element={<SignIn />} />
             <Route path="/sign-up/*" element={<SignUp />} />
 
-            {/* Protected routes */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/activities" element={<ActivityLibrary />} />
-            <Route path="/customize/:activityId" element={<CustomizePlaceholder />} />
+            {/* Onboarding route - requires auth but not completed onboarding */}
+            <Route
+              path="/onboarding"
+              element={
+                <OnboardingRoute requiresOnboarding>
+                  <Onboarding />
+                </OnboardingRoute>
+              }
+            />
+
+            {/* Protected routes - require completed onboarding */}
+            <Route
+              path="/dashboard"
+              element={
+                <OnboardingRoute>
+                  <Dashboard />
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <OnboardingRoute>
+                  <Profile />
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/activities"
+              element={
+                <OnboardingRoute>
+                  <ActivityLibrary />
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/customize/:activityId"
+              element={
+                <OnboardingRoute>
+                  <CustomizeActivity />
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/team/:teamId/manage"
+              element={
+                <OnboardingRoute>
+                  <TeamManagement />
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/team/:teamId/invite"
+              element={
+                <OnboardingRoute>
+                  <TeamManagement />
+                </OnboardingRoute>
+              }
+            />
 
             {/* Catch all - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />

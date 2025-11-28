@@ -101,3 +101,370 @@ export const COMPLEXITY_LABELS: Record<string, string> = {
   medium: 'Medium',
   hard: 'Hard',
 };
+
+// ============================================================================
+// Activity Customization Types
+// ============================================================================
+
+/**
+ * Request payload for customizing a public activity
+ * Sent to POST /api/activities/customize
+ */
+export interface CustomizeActivityRequest {
+  team_id: string;
+  organization_id: string;
+  public_activity_id: string;
+  duration_minutes: 15 | 30 | 45;
+  additional_context?: string;
+}
+
+/**
+ * Response from activity customization endpoint
+ */
+export interface CustomizeActivityResponse {
+  success: boolean;
+  activity_id: string;
+  activity: CustomizedActivity;
+  quotas_remaining: QuotaInfo;
+}
+
+/**
+ * Customized activity data returned from API
+ */
+export interface CustomizedActivity {
+  id: string;
+  team_id: string;
+  organization_id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  duration_minutes: number | null;
+  complexity: string | null;
+  required_tools: string[] | null;
+  instructions: string | null;
+  customization_notes: string | null;
+  customization_type: 'public_customized' | 'custom_generated';
+  source_public_activity_id: string | null;
+  status: 'suggested' | 'saved' | 'scheduled' | 'expired';
+  created_at: string | null;
+  expires_at: string | null;
+}
+
+/**
+ * Quota information returned in customization response
+ */
+export interface QuotaInfo {
+  public_used: number;
+  public_limit: number;
+  custom_used: number;
+  custom_limit: number;
+}
+
+/**
+ * Team profile for AI context display
+ * Matches team_profiles table schema
+ */
+export interface TeamProfile {
+  id: string;
+  team_id: string;
+  organization_id: string;
+  team_role_description: string | null;
+  member_responsibilities: string | null;
+  past_activities_summary: string | null;
+  industry_sector: string | null;
+  team_size: number | null;
+  preferences: Record<string, unknown> | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/**
+ * Team membership with related team and org data
+ * Used for team selector dropdown
+ */
+export interface TeamMembershipWithDetails {
+  id: string;
+  team_id: string;
+  user_id: string;
+  organization_id: string;
+  role: 'member' | 'manager' | 'admin';
+  joined_at: string | null;
+  teams: Team;
+  organizations: Organization;
+}
+
+/**
+ * Usage quota for an organization
+ * Matches usage_quotas table schema
+ */
+export interface UsageQuota {
+  id: string;
+  organization_id: string;
+  public_customizations_used: number | null;
+  public_customizations_limit: number | null;
+  custom_generations_used: number | null;
+  custom_generations_limit: number | null;
+  trust_score: number | null;
+  requires_verification: boolean | null;
+  quota_period_start: string | null;
+  quota_period_end: string | null;
+}
+
+// ============================================================================
+// Component Props Types
+// ============================================================================
+
+/**
+ * Props for DurationSelector component
+ */
+export interface DurationSelectorProps {
+  value: 15 | 30 | 45;
+  onChange: (duration: 15 | 30 | 45) => void;
+  disabled?: boolean;
+}
+
+/**
+ * Props for TeamSelector component
+ */
+export interface TeamSelectorProps {
+  teams: TeamMembershipWithDetails[];
+  selectedTeamId: string | null;
+  onSelect: (teamId: string) => void;
+  disabled?: boolean;
+}
+
+/**
+ * Props for TeamProfilePreview component
+ */
+export interface TeamProfilePreviewProps {
+  profile: TeamProfile | null;
+  isLoading: boolean;
+  teamName: string;
+  onSetupProfile?: () => void;
+}
+
+/**
+ * Props for CustomizationResult component
+ */
+export interface CustomizationResultProps {
+  activity: CustomizedActivity;
+  quotas: QuotaInfo;
+  onSave: () => void;
+  onDiscard: () => void;
+  isSaving?: boolean;
+}
+
+/**
+ * Props for QuotaDisplay component
+ */
+export interface QuotaDisplayProps {
+  used: number;
+  limit: number;
+  type?: 'public' | 'custom';
+}
+
+// ============================================================================
+// Hook Return Types
+// ============================================================================
+
+/**
+ * Return type for useCustomizeActivity hook
+ */
+export interface UseCustomizeActivityReturn {
+  mutate: (request: CustomizeActivityRequest) => void;
+  mutateAsync: (request: CustomizeActivityRequest) => Promise<CustomizeActivityResponse>;
+  data: CustomizeActivityResponse | undefined;
+  error: Error | null;
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  reset: () => void;
+}
+
+/**
+ * Return type for useTeamProfile hook
+ */
+export interface UseTeamProfileReturn {
+  data: TeamProfile | null | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+}
+
+/**
+ * Return type for useUserTeams hook
+ */
+export interface UseUserTeamsReturn {
+  data: TeamMembershipWithDetails[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+}
+
+/**
+ * Return type for useQuota hook
+ */
+export interface UseQuotaReturn {
+  data: UsageQuota | null | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+}
+
+// ============================================================================
+// Page State Types
+// ============================================================================
+
+/**
+ * Local state for CustomizeActivity page
+ */
+export interface CustomizePageState {
+  selectedTeamId: string | null;
+  selectedDuration: 15 | 30 | 45;
+  step: 'setup' | 'processing' | 'result' | 'error';
+  errorType: 'timeout' | 'quota' | 'network' | 'profile' | 'server' | null;
+}
+
+// ============================================================================
+// Onboarding Types
+// ============================================================================
+
+/**
+ * Onboarding step names
+ */
+export type OnboardingStep =
+  | 'welcome'
+  | 'create_organization'
+  | 'create_team'
+  | 'delegate_manager'
+  | 'team_profile'
+  | 'invite_members'
+  | 'complete';
+
+/**
+ * Onboarding state from API
+ */
+export interface OnboardingState {
+  currentStep: OnboardingStep;
+  organizationId: string | null;
+  teamId: string | null;
+  isComplete: boolean;
+  userRole: UserRole | null;
+}
+
+/**
+ * Invitation status
+ */
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
+
+/**
+ * Pending invitation record
+ */
+export interface PendingInvitation {
+  id: string;
+  email: string;
+  full_name: string | null;
+  organization_id: string;
+  team_id: string;
+  role: UserRole;
+  invited_by: string;
+  status: InvitationStatus;
+  expires_at: string;
+  created_at: string;
+  accepted_at: string | null;
+}
+
+/**
+ * Request to create organization
+ */
+export interface CreateOrganizationRequest {
+  name: string;
+}
+
+/**
+ * Response from create organization
+ */
+export interface CreateOrganizationResponse {
+  success: boolean;
+  organization: Organization;
+}
+
+/**
+ * Request to create team
+ */
+export interface CreateTeamRequest {
+  organization_id: string;
+  name: string;
+  description?: string;
+}
+
+/**
+ * Response from create team
+ */
+export interface CreateTeamResponse {
+  success: boolean;
+  team: Team;
+}
+
+/**
+ * Request to create/update team profile during onboarding
+ */
+export interface CreateTeamProfileRequest {
+  team_id: string;
+  organization_id: string;
+  team_role_description?: string;
+  member_responsibilities?: string;
+  past_activities_summary?: string;
+  industry_sector?: string;
+  team_size?: string; // String like "2-5", "6-10", etc.
+}
+
+/**
+ * Request to invite a member
+ */
+export interface InviteMemberRequest {
+  email: string;
+  full_name?: string;
+  team_id: string;
+  organization_id: string;
+  role: 'manager' | 'member';
+}
+
+/**
+ * Response from invite member
+ */
+export interface InviteMemberResponse {
+  success: boolean;
+  invitation: PendingInvitation;
+  invite_message: string;
+}
+
+// ============================================================================
+// Onboarding Component Props
+// ============================================================================
+
+export interface OnboardingWizardProps {
+  initialStep?: OnboardingStep;
+}
+
+export interface OrganizationFormData {
+  name: string;
+}
+
+export interface TeamFormData {
+  name: string;
+  description: string;
+}
+
+export interface TeamProfileFormData {
+  team_role_description: string;
+  member_responsibilities: string;
+  past_activities_summary: string;
+  industry_sector: string;
+  team_size: string | null;
+}
+
+export interface InvitationFormData {
+  email: string;
+  full_name: string;
+  role: 'manager' | 'member';
+}

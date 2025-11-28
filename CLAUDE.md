@@ -199,7 +199,8 @@ backend/
     │   ├── webhooks.py      # Clerk webhook endpoints
     │   ├── activities.py    # AI activity customization/generation
     │   ├── materials.py     # File upload and management
-    │   └── jobs.py          # Async job status polling
+    │   ├── jobs.py          # Async job status polling
+    │   └── onboarding.py    # Organization/team setup, invitations
     ├── services/
     │   ├── ai_service.py    # OpenAI integration
     │   ├── file_service.py  # File validation and text extraction
@@ -209,7 +210,7 @@ backend/
     │   └── generation_tasks.py  # Celery async tasks
     └── utils/
         ├── supabase_client.py   # Service role & user clients
-        ├── user_sync.py         # User CRUD from webhooks
+        ├── user_sync.py         # User CRUD from webhooks + invitation auto-linking
         └── prompts.py           # AI prompt templates
 ```
 
@@ -226,13 +227,14 @@ backend/
 ```
 frontend/src/
 ├── components/
-│   ├── ui/              # shadcn/ui components (Button, Card, Dialog, Select, Badge, Skeleton)
-│   ├── layout/          # Navbar, Layout, ProtectedRoute
-│   ├── dashboard/       # WelcomeCard, TeamInfoCard
-│   └── activities/      # ActivityCard, ActivityGrid, ActivityFilters, ActivityDetailModal, EmptyState
-├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary
-├── hooks/               # useUser, useActivities (TanStack Query hooks)
-├── lib/                 # Supabase client (with Clerk JWT), utils
+│   ├── ui/              # shadcn/ui components (Button, Card, Dialog, Select, Badge, Input, Textarea, Alert)
+│   ├── layout/          # Navbar, Layout, ProtectedRoute, OnboardingRoute
+│   ├── dashboard/       # WelcomeCard, TeamInfoCard, QuickActionsCard
+│   ├── activities/      # ActivityCard, ActivityGrid, ActivityFilters, ActivityDetailModal, EmptyState
+│   └── onboarding/      # WelcomeStep, CreateOrganizationStep, CreateTeamStep, etc. (7 step components)
+├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary, Onboarding, TeamManagement
+├── hooks/               # useUser, useActivities, useOnboardingStatus, useCreateOrganization, etc. (16 hooks)
+├── lib/                 # Supabase client (with Clerk JWT), API client, utils
 ├── types/               # TypeScript interfaces matching database schema
 ├── App.tsx              # Routing (React Router), providers (Clerk, TanStack Query)
 └── main.tsx             # Entry point
@@ -241,16 +243,18 @@ frontend/src/
 **Key Patterns:**
 - Direct Supabase queries (no backend API middleware) with Clerk JWT
 - TanStack Query for data fetching, caching, and loading states
-- Protected routes redirect unauthenticated users to sign-in
-- Conditional rendering based on team membership status
+- OnboardingRoute wrapper enforces onboarding completion before accessing protected routes
+- Role-based rendering (admin/manager/member) in Dashboard and TeamManagement pages
+- Email-based invitation system with auto-linking on signup via webhooks
 
 ### Database Architecture (Supabase)
 
 **Core Tables:**
-- `users` - Synced from Clerk (clerk_user_id is external identifier)
+- `users` - Synced from Clerk (clerk_user_id is external identifier), includes `onboarding_completed` and `onboarding_step` columns
 - `organizations` - Multi-tenant isolation point
 - `teams` - Belongs to organizations
 - `team_members` - Junction table with role enum (member/manager/admin)
+- `pending_invitations` - Email-based invitations with auto-linking on signup
 - `subscriptions` - Stripe-ready billing
 
 **AI Feature Tables:**
@@ -505,16 +509,19 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 - ✅ Team profile management
 - ✅ Supabase Storage integration
 
-**Phase 3 - Frontend UI (In Progress):**
+**Phase 3 - Frontend UI (Completed):**
 - ✅ Activity Library page with filtering (category, duration, complexity)
 - ✅ Activity cards with detail modal
-- ✅ Customization placeholder page (/customize/:activityId)
-- ⏭️ Activity customization UI (LLM integration)
+- ✅ Activity customization page (/customize/:activityId)
+- ✅ Role-based onboarding wizard (7 steps)
+- ✅ Email-based invitation system
+- ✅ Team management page for managers/admins
+- ✅ Role-based dashboard with quick actions
+
+**Not Yet Implemented:**
 - ⏭️ Event scheduling UI
 - ⏭️ Feedback submission UI
 - ⏭️ Analytics dashboard
-
-**Not Yet Implemented:**
 - ⏭️ Deployment configuration (Docker, CI/CD)
 - ⏭️ Backend test suite (pytest)
 
@@ -541,6 +548,17 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 2. Celery worker processes task in background
 3. Frontend polls `GET /api/jobs/{job_id}` until `status: "completed"`
 4. Response includes generated activities
+
+**Onboarding:**
+- `GET /api/onboarding/status` - Get current onboarding state
+- `POST /api/onboarding/organization` - Create organization (first-time admin)
+- `POST /api/onboarding/team` - Create team
+- `POST /api/onboarding/team-profile` - Create/update team profile
+- `POST /api/onboarding/invite` - Invite member (returns copyable message)
+- `GET /api/onboarding/invitations/{team_id}` - List pending invitations
+- `DELETE /api/onboarding/invitations/{invitation_id}` - Cancel invitation
+- `PATCH /api/onboarding/step` - Update onboarding step
+- `PATCH /api/onboarding/complete` - Mark onboarding complete
 
 ## Key Documentation Files
 
@@ -582,12 +600,26 @@ This project follows the TEAMFIT Constitution (`.specify/memory/constitution.md`
 5. **CORS** restricted to configured frontend URL
 6. **Environment variables** never committed to repository
 
+## User Onboarding Flow
+
+New users are automatically guided through onboarding:
+1. **First-time users** are redirected to `/onboarding` if `onboarding_completed` is false
+2. **Onboarding steps**: Welcome → Create Organization → Create Team → Delegate Manager (optional) → Team Profile → Invite Members → Complete
+3. **Invited users** sign up with their email → webhook auto-links them to the team via `pending_invitations` → they skip onboarding and go directly to dashboard
+4. **Role-based access**: Dashboard shows different quick actions based on user role (admin/manager/member)
+
+**Invitation System:**
+- Admin/Manager adds email + role → creates `pending_invitations` record
+- Copyable invite message generated (email system is post-MVP)
+- When invited user signs up, `user_sync.py` checks for pending invitations and auto-links them
+- Invited users' `onboarding_completed` is set to true automatically
+
 ## Super Admin Setup
 
 Email `shakyasupernicecrunch@gmail.com` is configured as super admin. When this user signs up:
 1. User is created in `users` table via webhook
-2. Manually create first organization and team
-3. Manually insert `team_members` record with `role='admin'`
+2. Goes through onboarding flow (create org, team, etc.)
+3. Becomes admin automatically as the organization creator
 4. All subsequent admins can be assigned through the application
 
 ## MCP Integration
