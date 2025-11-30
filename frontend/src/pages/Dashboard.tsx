@@ -1,15 +1,18 @@
 /**
  * Main dashboard page
  * Shows different content based on user role (admin, manager, member)
+ * Includes quota usage, recent activities, team profile, and quick actions
  */
 
 import { Layout } from '@/components/layout/Layout';
 import { TeamInfoCard } from '@/components/dashboard/TeamInfoCard';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
+import { QuotaCard } from '@/components/dashboard/QuotaCard';
+import { RecentActivitiesCard } from '@/components/dashboard/RecentActivitiesCard';
+import { TeamProfileCard } from '@/components/dashboard/TeamProfileCard';
 import { useUser as useClerkUser } from '@clerk/clerk-react';
 import { useUser } from '@/hooks/useUser';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function Dashboard() {
   const { user: clerkUser } = useClerkUser();
@@ -69,37 +72,29 @@ export function Dashboard() {
               <TeamInfoCard data={dashboardData} />
             )}
 
+            {/* Quota and Team Profile Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <QuotaCard
+                organizationId={dashboardData.organization?.id || null}
+                subscriptionPlan={dashboardData.organization?.subscription_plan || 'free'}
+              />
+              <TeamProfileCard
+                teamId={dashboardData.team?.id || null}
+                teamName={dashboardData.team?.name || 'Your Team'}
+              />
+            </div>
+
             {/* Role-based Quick Actions */}
             <QuickActionsCard
               isManagerOrAdmin={isManagerOrAdmin}
               isAdmin={isAdmin}
               teamId={dashboardData.team?.id || null}
               organizationId={dashboardData.organization?.id || null}
+              subscriptionPlan={dashboardData.organization?.subscription_plan}
             />
 
-            {/* Activity Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    No recent activities yet. Check back after your first event!
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Your Feedback</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    You haven't submitted any feedback yet.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Recent Activities - Full Width */}
+            <RecentActivitiesCard teamId={dashboardData.team?.id || null} />
           </div>
         )}
       </div>
