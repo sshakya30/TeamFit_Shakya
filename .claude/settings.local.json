@@ -12,7 +12,9 @@
       "Bash(del \"c:\\Cursor Projects\\Team_Shakya\\frontend\\src\\pages\\CustomizePlaceholder.tsx\")",
       "Bash(npm install:*)",
       "Bash(python -c:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git checkout:*)",
+      "Bash(del /q \"frontend\\src\\components\\dashboard\\QuotaCard.tsx\" \"frontend\\src\\components\\dashboard\\RecentActivitiesCard.tsx\" \"frontend\\src\\components\\dashboard\\TeamProfileCard.tsx\" \"frontend\\src\\hooks\\useRecentActivities.ts\")"
     ],
     "deny": [],
     "ask": []
