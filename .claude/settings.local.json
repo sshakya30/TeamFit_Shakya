@@ -15,7 +15,8 @@
       "Bash(curl:*)",
       "Bash(git checkout:*)",
       "Bash(del /q \"frontend\\src\\components\\dashboard\\QuotaCard.tsx\" \"frontend\\src\\components\\dashboard\\RecentActivitiesCard.tsx\" \"frontend\\src\\components\\dashboard\\TeamProfileCard.tsx\" \"frontend\\src\\hooks\\useRecentActivities.ts\")",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(del \"c:\\Cursor Projects\\Team_Shakya\\frontend\\src\\components\\dev\\DevSimulationBanner.tsx\")"
     ],
     "deny": [],
     "ask": []

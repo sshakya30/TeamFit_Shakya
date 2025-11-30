@@ -230,12 +230,12 @@ frontend/src/
 ├── components/
 │   ├── ui/              # shadcn/ui components (Button, Card, Dialog, Select, Badge, Input, Textarea, Alert, AlertDialog, Progress)
 │   ├── layout/          # Navbar, Layout, OnboardingRoute, MaterialsRoute
-│   ├── dashboard/       # WelcomeCard, TeamInfoCard, QuickActionsCard
+│   ├── dashboard/       # WelcomeCard, TeamInfoCard, QuickActionsCard, QuotaCard, RecentActivitiesCard, TeamProfileCard
 │   ├── activities/      # ActivityCard, ActivityGrid, ActivityFilters, ActivityDetailModal, EmptyState
 │   ├── materials/       # FileDropzone, UploadProgress, MaterialCard, MaterialsList
 │   └── onboarding/      # WelcomeStep, CreateOrganizationStep, CreateTeamStep, etc. (7 step components)
-├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary, Onboarding, TeamManagement, Materials
-├── hooks/               # useUser, useActivities, useOnboardingStatus, useUploadMaterial, useTeamMaterials, useDeleteMaterial, etc. (19 hooks)
+├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary, Onboarding, TeamManagement, Materials, GenerateActivity
+├── hooks/               # useUser, useActivities, useOnboardingStatus, useUploadMaterial, useTeamMaterials, useDeleteMaterial, useRecentActivities, useGenerateActivities, useJobStatus, etc. (22 hooks)
 ├── lib/                 # Supabase client (with Clerk JWT), API client, utils
 ├── types/               # TypeScript interfaces matching database schema
 ├── App.tsx              # Routing (React Router), providers (Clerk, TanStack Query)
@@ -522,6 +522,13 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 - ✅ Team management page for managers/admins
 - ✅ Role-based dashboard with quick actions
 - ✅ Materials page with file upload, progress tracking, and management (/materials)
+- ✅ Custom activity generation page (/generate)
+
+**Phase 4 - Dashboard Enhancements (Completed):**
+- ✅ Quota usage card with color-coded progress bars (green <70%, yellow 70-90%, red >90%)
+- ✅ Recent customized activities list (5 most recent with type/status badges)
+- ✅ Team profile summary card with edit access
+- ✅ Enhanced quick actions (Generate Activities, Manage Materials buttons)
 
 **Not Yet Implemented:**
 - ⏭️ Event scheduling UI
