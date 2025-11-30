@@ -198,9 +198,10 @@ backend/
     ├── routers/
     │   ├── webhooks.py      # Clerk webhook endpoints
     │   ├── activities.py    # AI activity customization/generation
-    │   ├── materials.py     # File upload and management
+    │   ├── materials.py     # File upload and management (requires auth)
     │   ├── jobs.py          # Async job status polling
-    │   └── onboarding.py    # Organization/team setup, invitations
+    │   ├── onboarding.py    # Organization/team setup, invitations
+    │   └── management.py    # Post-onboarding team/org management APIs
     ├── services/
     │   ├── ai_service.py    # OpenAI integration
     │   ├── file_service.py  # File validation and text extraction
@@ -227,13 +228,14 @@ backend/
 ```
 frontend/src/
 ├── components/
-│   ├── ui/              # shadcn/ui components (Button, Card, Dialog, Select, Badge, Input, Textarea, Alert)
-│   ├── layout/          # Navbar, Layout, ProtectedRoute, OnboardingRoute
+│   ├── ui/              # shadcn/ui components (Button, Card, Dialog, Select, Badge, Input, Textarea, Alert, AlertDialog, Progress)
+│   ├── layout/          # Navbar, Layout, OnboardingRoute, MaterialsRoute
 │   ├── dashboard/       # WelcomeCard, TeamInfoCard, QuickActionsCard
 │   ├── activities/      # ActivityCard, ActivityGrid, ActivityFilters, ActivityDetailModal, EmptyState
+│   ├── materials/       # FileDropzone, UploadProgress, MaterialCard, MaterialsList
 │   └── onboarding/      # WelcomeStep, CreateOrganizationStep, CreateTeamStep, etc. (7 step components)
-├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary, Onboarding, TeamManagement
-├── hooks/               # useUser, useActivities, useOnboardingStatus, useCreateOrganization, etc. (16 hooks)
+├── pages/               # Landing, SignIn, SignUp, Dashboard, Profile, ActivityLibrary, Onboarding, TeamManagement, Materials
+├── hooks/               # useUser, useActivities, useOnboardingStatus, useUploadMaterial, useTeamMaterials, useDeleteMaterial, etc. (19 hooks)
 ├── lib/                 # Supabase client (with Clerk JWT), API client, utils
 ├── types/               # TypeScript interfaces matching database schema
 ├── App.tsx              # Routing (React Router), providers (Clerk, TanStack Query)
@@ -241,11 +243,13 @@ frontend/src/
 ```
 
 **Key Patterns:**
-- Direct Supabase queries (no backend API middleware) with Clerk JWT
+- `useUser` hook fetches user data via backend API (`/api/manage/me/profile`) - avoids Clerk+Supabase JWT complexity
 - TanStack Query for data fetching, caching, and loading states
 - OnboardingRoute wrapper enforces onboarding completion before accessing protected routes
+- MaterialsRoute wrapper enforces manager/admin role + paid subscription for /materials
 - Role-based rendering (admin/manager/member) in Dashboard and TeamManagement pages
 - Email-based invitation system with auto-linking on signup via webhooks
+- XHR-based file uploads with progress tracking (fetch doesn't support upload progress)
 
 ### Database Architecture (Supabase)
 
@@ -517,6 +521,7 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 - ✅ Email-based invitation system
 - ✅ Team management page for managers/admins
 - ✅ Role-based dashboard with quick actions
+- ✅ Materials page with file upload, progress tracking, and management (/materials)
 
 **Not Yet Implemented:**
 - ⏭️ Event scheduling UI
@@ -559,6 +564,21 @@ Types include Row, Insert, Update, and Relationships for all 11 tables.
 - `DELETE /api/onboarding/invitations/{invitation_id}` - Cancel invitation
 - `PATCH /api/onboarding/step` - Update onboarding step
 - `PATCH /api/onboarding/complete` - Mark onboarding complete
+
+**Management (post-onboarding):**
+- `GET /api/manage/me/profile` - Get current user's complete profile (used by useUser hook)
+- `GET /api/manage/organization/{id}` - Get organization details
+- `PATCH /api/manage/organization/{id}` - Update organization
+- `GET /api/manage/organization/{id}/teams` - List all teams in org
+- `POST /api/manage/teams` - Create new team
+- `GET /api/manage/teams/{id}` - Get team details with profile
+- `PATCH /api/manage/teams/{id}` - Update team
+- `DELETE /api/manage/teams/{id}` - Delete team
+- `PATCH /api/manage/teams/{id}/profile` - Update team profile
+- `GET /api/manage/teams/{id}/members` - List team members
+- `PATCH /api/manage/teams/{id}/members/{member_id}/role` - Change member role
+- `DELETE /api/manage/teams/{id}/members/{member_id}` - Remove member
+- `GET /api/manage/teams/{id}/invitations` - List team invitations
 
 ## Key Documentation Files
 

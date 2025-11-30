@@ -714,3 +714,157 @@ export async function listTeamInvitations(
 
   return response.json();
 }
+
+// ============================================================================
+// Materials API
+// ============================================================================
+
+import type {
+  Material,
+  UploadMaterialResponse,
+  GenerateCustomActivitiesRequest,
+  GenerateCustomActivitiesResponse,
+  JobStatusResponse,
+} from '@/types';
+
+/**
+ * Upload a material file with progress tracking
+ * Uses XMLHttpRequest for upload progress events
+ */
+export async function uploadMaterial(
+  file: File,
+  teamId: string,
+  organizationId: string,
+  token: string,
+  onProgress?: (percent: number) => void
+): Promise<UploadMaterialResponse> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        const error = JSON.parse(xhr.responseText);
+        reject(new Error(error.detail || 'Upload failed'));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error'));
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('team_id', teamId);
+    formData.append('organization_id', organizationId);
+
+    xhr.open('POST', `${API_URL}/api/materials/upload`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Get all materials for a team
+ */
+export async function getTeamMaterials(
+  teamId: string,
+  token: string
+): Promise<Material[]> {
+  const response = await fetch(`${API_URL}/api/materials/${teamId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(extractErrorMessage(error, response.status));
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete a material
+ */
+export async function deleteMaterial(
+  materialId: string,
+  token: string
+): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/materials/${materialId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(extractErrorMessage(error, response.status));
+  }
+
+  return response.json();
+}
+
+// ============================================================================
+// Custom Generation API
+// ============================================================================
+
+/**
+ * Generate custom activities for a team using AI
+ * Starts an async job and returns job_id for status polling
+ * @param token - Clerk JWT token
+ * @param data - Generation request payload with requirements and optional materials
+ * @returns Response with job_id for polling
+ */
+export async function generateCustomActivities(
+  token: string,
+  data: GenerateCustomActivitiesRequest
+): Promise<GenerateCustomActivitiesResponse> {
+  const response = await fetch(`${API_URL}/api/activities/generate-custom`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get the status of a generation job
+ * Poll this endpoint until status is 'completed' or 'failed'
+ * @param token - Clerk JWT token
+ * @param jobId - The job ID to check
+ * @returns Job status with activities when completed
+ */
+export async function getJobStatus(
+  token: string,
+  jobId: string
+): Promise<JobStatusResponse> {
+  const response = await fetch(`${API_URL}/api/jobs/${jobId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}

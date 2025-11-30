@@ -4,11 +4,19 @@
  */
 
 import { Link } from 'react-router-dom';
-import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, UserButton, useUser as useClerkUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/hooks/useUser';
 
 export function Navbar() {
-  const { user } = useUser();
+  const { user } = useClerkUser();
+  const { data: dashboardData, isLoading } = useUser();
+
+  const userRole = dashboardData?.teamMember?.role;
+  const canAccessMaterials =
+    (userRole === 'manager' || userRole === 'admin') &&
+    dashboardData?.organization?.subscription_status === 'active' &&
+    dashboardData?.organization?.subscription_plan !== 'free';
 
   return (
     <nav className="border-b">
@@ -36,6 +44,13 @@ export function Navbar() {
             <Link to="/activities">
               <Button variant="ghost">Activities</Button>
             </Link>
+            {isLoading ? (
+              <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
+            ) : canAccessMaterials ? (
+              <Link to="/materials">
+                <Button variant="ghost">Materials</Button>
+              </Link>
+            ) : null}
             <Link to="/profile">
               <Button variant="ghost">Profile</Button>
             </Link>

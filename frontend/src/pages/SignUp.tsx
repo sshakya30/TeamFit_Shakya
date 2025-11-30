@@ -13,7 +13,7 @@ export function SignUp() {
           routing="path"
           path="/sign-up"
           signInUrl="/sign-in"
-          redirectUrl="/dashboard"
+          fallbackRedirectUrl="/dashboard"
         />
       </div>
     </Layout>

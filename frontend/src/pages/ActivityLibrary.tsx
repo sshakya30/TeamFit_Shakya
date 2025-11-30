@@ -4,11 +4,15 @@
  */
 
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { ActivityGrid, ActivityFilters, ActivityDetailModal, EmptyState } from '@/components/activities';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 import { useActivities, type PublicActivity } from '@/hooks/useActivities';
+import { useUser } from '@/hooks/useUser';
 import type { FilterState } from '@/types';
 
 function ActivityLibrarySkeleton() {
@@ -36,6 +40,12 @@ function ActivityLibrarySkeleton() {
 
 export function ActivityLibrary() {
   const { data: activities, isLoading, error, refetch } = useActivities();
+  const { data: userData } = useUser();
+
+  // Check if user can generate custom activities (manager/admin with paid plan)
+  const canGenerate = userData?.teamMember?.role &&
+    ['manager', 'admin'].includes(userData.teamMember.role) &&
+    userData?.organization?.subscription_status === 'active';
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -81,11 +91,21 @@ export function ActivityLibrary() {
       <Layout>
         <div className="space-y-6">
           {/* Page Header */}
-          <div>
-            <h1 className="text-3xl font-bold">Activity Library</h1>
-            <p className="text-muted-foreground">
-              Browse and customize team-building activities for your team
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">Activity Library</h1>
+              <p className="text-muted-foreground">
+                Browse and customize team-building activities for your team
+              </p>
+            </div>
+            {canGenerate && (
+              <Link to="/generate">
+                <Button variant="outline" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Generate Custom
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Filters */}

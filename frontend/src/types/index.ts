@@ -468,3 +468,227 @@ export interface InvitationFormData {
   full_name: string;
   role: 'manager' | 'member';
 }
+
+// ============================================================================
+// Materials Types
+// ============================================================================
+
+/**
+ * Uploaded material file record
+ * Maps to `uploaded_materials` table in Supabase
+ */
+export interface Material {
+  id: string;
+  team_id: string;
+  organization_id: string;
+  file_name: string;
+  file_type: 'pdf' | 'docx' | 'pptx' | 'xlsx';
+  file_size_bytes: number;
+  file_url: string;
+  storage_path: string | null;
+  extracted_text: string | null;
+  content_summary: string | null;
+  uploaded_by: string;
+  created_at: string | null;
+}
+
+/**
+ * Response from POST /api/materials/upload
+ */
+export interface UploadMaterialResponse {
+  material_id: string;
+  file_name: string;
+  content_summary: string;
+  storage_url: string;
+  file_size_bytes: number;
+}
+
+/**
+ * Allowed file types with MIME mappings
+ */
+export const ALLOWED_FILE_TYPES: Record<string, string[]> = {
+  'application/pdf': ['.pdf'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+};
+
+/**
+ * Maximum file size in bytes (10MB)
+ */
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * File type color mapping for UI display
+ */
+export const FILE_TYPE_COLORS: Record<string, string> = {
+  pdf: 'text-red-500',
+  docx: 'text-blue-500',
+  pptx: 'text-orange-500',
+  xlsx: 'text-green-500',
+};
+
+// ============================================================================
+// Custom Generation Types
+// ============================================================================
+
+/**
+ * Request payload for generating custom activities
+ * Sent to POST /api/activities/generate-custom
+ */
+export interface GenerateCustomActivitiesRequest {
+  team_id: string;
+  organization_id: string;
+  requirements: string;
+  material_ids?: string[];
+}
+
+/**
+ * Response from custom generation endpoint
+ * Returns job_id for status polling
+ */
+export interface GenerateCustomActivitiesResponse {
+  success: boolean;
+  job_id: string;
+  status: 'pending' | 'processing';
+  message: string;
+}
+
+/**
+ * Job status response from GET /api/jobs/{job_id}
+ */
+export interface JobStatusResponse {
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  job: CustomizationJob;
+  activities?: CustomizedActivity[];
+  error?: string;
+}
+
+/**
+ * Customization job record from database
+ */
+export interface CustomizationJob {
+  id: string;
+  team_id: string;
+  organization_id: string;
+  job_type: 'custom_generation' | 'public_customization';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_by: string;
+  input_context: {
+    team_profile: TeamProfile;
+    requirements: string;
+    materials_count: number;
+  };
+  result_data?: {
+    activity_ids: string[];
+  };
+  error_message?: string;
+  created_at: string;
+  completed_at?: string;
+}
+
+/**
+ * Page state for GenerateActivity page
+ * Discriminated union for type-safe state handling
+ */
+export type GenerationPageState =
+  | { status: 'idle' }
+  | { status: 'submitting' }
+  | { status: 'polling'; jobId: string; startTime: number }
+  | { status: 'completed'; jobId: string; activities: CustomizedActivity[] }
+  | { status: 'error'; errorType: GenerationErrorType; message: string };
+
+/**
+ * Error types for generation failures
+ */
+export type GenerationErrorType = 'timeout' | 'failed' | 'network' | 'quota' | 'validation';
+
+/**
+ * Form state for requirements and material selection
+ */
+export interface GenerationFormState {
+  requirements: string;
+  selectedMaterialIds: string[];
+}
+
+// ============================================================================
+// Custom Generation Component Props Types
+// ============================================================================
+
+/**
+ * Props for RequirementsSection component
+ */
+export interface RequirementsSectionProps {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  error?: string;
+}
+
+/**
+ * Props for MaterialsSection component
+ */
+export interface MaterialsSectionProps {
+  teamId: string;
+  selectedIds: string[];
+  onSelectionChange: (ids: string[]) => void;
+  disabled?: boolean;
+}
+
+/**
+ * Props for GenerationProgress component
+ */
+export interface GenerationProgressProps {
+  status: 'pending' | 'processing';
+  startTime: number;
+  onCancel?: () => void;
+}
+
+/**
+ * Props for GeneratedActivityCard component
+ */
+export interface GeneratedActivityCardProps {
+  activity: CustomizedActivity;
+  onSave: () => void;
+  isSaving?: boolean;
+  isSaved?: boolean;
+}
+
+/**
+ * Props for GenerationResults component
+ */
+export interface GenerationResultsProps {
+  activities: CustomizedActivity[];
+  onSaveActivity: (activityId: string) => Promise<void>;
+  onGenerateMore: () => void;
+  savedActivityIds: Set<string>;
+}
+
+// ============================================================================
+// Custom Generation Hook Return Types
+// ============================================================================
+
+/**
+ * Return type for useGenerateActivities hook
+ */
+export interface UseGenerateActivitiesReturn {
+  mutate: (request: GenerateCustomActivitiesRequest) => void;
+  mutateAsync: (request: GenerateCustomActivitiesRequest) => Promise<GenerateCustomActivitiesResponse>;
+  data: GenerateCustomActivitiesResponse | undefined;
+  error: Error | null;
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  reset: () => void;
+}
+
+/**
+ * Return type for useJobStatus hook
+ */
+export interface UseJobStatusReturn {
+  data: JobStatusResponse | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  isPolling: boolean;
+}

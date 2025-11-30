@@ -15,7 +15,10 @@ import { ActivityLibrary } from './pages/ActivityLibrary';
 import { CustomizeActivity } from './pages/CustomizeActivity';
 import { Onboarding } from './pages/Onboarding';
 import { TeamManagement } from './pages/TeamManagement';
+import { Materials } from './pages/Materials';
+import { GenerateActivity } from './pages/GenerateActivity';
 import { OnboardingRoute } from './components/layout/OnboardingRoute';
+import { MaterialsRoute } from './components/layout/MaterialsRoute';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -100,6 +103,26 @@ function App() {
               element={
                 <OnboardingRoute>
                   <TeamManagement />
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/materials"
+              element={
+                <OnboardingRoute>
+                  <MaterialsRoute>
+                    <Materials />
+                  </MaterialsRoute>
+                </OnboardingRoute>
+              }
+            />
+            <Route
+              path="/generate"
+              element={
+                <OnboardingRoute>
+                  <MaterialsRoute>
+                    <GenerateActivity />
+                  </MaterialsRoute>
                 </OnboardingRoute>
               }
             />

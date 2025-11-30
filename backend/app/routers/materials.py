@@ -5,7 +5,8 @@ Handles file uploads, storage, and team materials management
 
 import os
 from typing import List, Dict
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.utils.supabase_client import get_supabase_service_client
 from app.services.file_service import FileService
 from app.services.ai_service import AIService
@@ -13,13 +14,44 @@ from app.config import get_settings
 
 settings = get_settings()
 router = APIRouter()
+security = HTTPBearer()
+
+
+def get_user_id_from_token(credentials: HTTPAuthorizationCredentials, supabase) -> str:
+    """Extract user ID from Clerk JWT token by looking up clerk_user_id in users table."""
+    import jwt
+
+    token = credentials.credentials
+    try:
+        # Decode without verification to get the 'sub' claim (Clerk user ID)
+        # The token has already been validated by Clerk on the frontend
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        clerk_user_id = decoded.get('sub')
+
+        if not clerk_user_id:
+            raise HTTPException(401, "Invalid token: missing user ID")
+
+        # Look up the user in our database
+        user_response = supabase.table('users')\
+            .select('id')\
+            .eq('clerk_user_id', clerk_user_id)\
+            .single()\
+            .execute()
+
+        if not user_response.data:
+            raise HTTPException(401, "User not found")
+
+        return user_response.data['id']
+    except jwt.DecodeError:
+        raise HTTPException(401, "Invalid token format")
 
 
 @router.post("/upload")
 async def upload_material(
     team_id: str = Form(...),
     organization_id: str = Form(...),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> Dict:
     """
     Upload a team material file (paid subscription only)
@@ -34,6 +66,10 @@ async def upload_material(
     print(f"📤 Uploading material for team {team_id}")
 
     supabase = get_supabase_service_client()
+
+    # Get the actual user ID from the JWT token
+    user_id = get_user_id_from_token(credentials, supabase)
+    print(f"👤 Authenticated user: {user_id}")
 
     # 1. Validate subscription (paid only)
     sub_response = supabase.table('subscriptions')\
@@ -110,7 +146,7 @@ async def upload_material(
             "storage_path": storage_path,
             "file_url": file_url,
             "content_summary": content_summary,
-            "uploaded_by": "c1d2e3f4-5a6b-7c8d-9e0f-1a2b3c4d5e6f",
+            "uploaded_by": user_id,
             "extracted_text": text_content[:10000]  # Store first 10k chars
         }
 
